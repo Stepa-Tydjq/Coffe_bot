@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест</title>
+</head>
+<body>
+    <h1>Сервер работает!</h1>
+    <button onclick="testAuth()">Тест авторизации</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAuth() {
+            const authData = {
+                id: 123456789,
+                username: "test_user",
+                first_name: "Тестовый",
+                last_name: "Пользователь",
+                auth_date: Math.floor(Date.now() / 1000)
+            };
+
+            const response = await fetch('/auth/telegram', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(authData)
+            });
+
+            const result = await response.json();
+            document.getElementById('result').innerHTML = JSON.stringify(result);
+        }
+    </script>
+</body>
+</html>

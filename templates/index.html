@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кофейня CoffeeBot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .cart-card {
+                position: static;
+            }
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .cart-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        .profile {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .user-details {
+            line-height: 1.4;
+        }
+        .user-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .user-username {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .name-edit {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .name-input {
+            padding: 10px 12px;
+            border-radius: 25px;
+            border: none;
+            outline: none;
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+            min-width: 150px;
+        }
+        .name-input.error {
+            border: 2px solid #ff4757;
+            background: #fff0f0;
+        }
+        .save-name-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .save-name-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .name-warning {
+            color: #ffcccc;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            width: 100%;
+        }
+        .name-warning.show {
+            display: block;
+        }
+        .menu {
+            display: grid;
+            gap: 15px;
+        }
+        .coffee-item {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        .coffee-item:hover {
+            transform: translateX(5px);
+        }
+        .coffee-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .coffee-info p {
+            color: #666;
+            font-size: 14px;
+        }
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .add-to-cart-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-left: 15px;
+        }
+        .add-to-cart-btn:hover {
+            background: #5a67d8;
+        }
+        .add-to-cart-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .cart-items {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .cart-item-info {
+            flex: 1;
+        }
+        .cart-item-name {
+            font-weight: bold;
+        }
+        .cart-item-price {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 10px;
+        }
+        .quantity-btn {
+            background: #e0e0e0;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .quantity-btn:hover {
+            background: #ccc;
+        }
+        .remove-item {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .cart-total {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+            text-align: right;
+        }
+        .total-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .checkout-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        .checkout-btn:hover {
+            background: #218838;
+        }
+        .checkout-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .empty-cart {
+            text-align: center;
+            color: #999;
+            padding: 40px 0;
+        }
+        .unauth-badge {
+            background: #fff3e0;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            animation: fadeInUp 0.3s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="app">
+            <div class="loading">Загрузка...</div>
+        </div>
+        <div class="cart-card">
+            <h2>🛒 Корзина</h2>
+            <div id="cart-content">
+                <div class="empty-cart">Корзина пуста</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BOT_USERNAME = "coffe_plz_bot";
+        const WEBAPP_URL = window.location.origin;
+        let currentUser = null;
+        let isLoading = true;
+
+        const menu = [
+            { name: 'Американо', price: 150, description: 'Классический эспрессо с водой' },
+            { name: 'Капучино', price: 180, description: 'Эспрессо с пышной молочной пенкой' },
+            { name: 'Латте', price: 200, description: 'Нежный кофе с большим количеством молока' }
+        ];
+
+        // Список запрещенных слов (мат)
+        const badWords = [
+            'хуй', 'пизд', 'бля', 'ебан', 'залуп', 'мудак', 'гандон', 'пидор',
+            'редиска', 'сука', 'сучка', 'долбо', 'дебил', 'кретин', 'идиот',
+            'тупой', 'тупая', 'шлюха', 'блядь', 'нахуй', 'похуй', 'ебать'
+        ];
+
+        // Функция проверки имени
+        function validateName(name) {
+            if (!name || name.trim() === '') {
+                return { valid: false, message: 'Имя не может быть пустым' };
+            }
+
+            const trimmedName = name.trim();
+
+            // Проверка длины
+            if (trimmedName.length < 2) {
+                return { valid: false, message: 'Имя должно содержать минимум 2 буквы' };
+            }
+            if (trimmedName.length > 30) {
+                return { valid: false, message: 'Имя не должно превышать 30 символов' };
+            }
+
+            // Проверка на наличие цифр
+            if (/\d/.test(trimmedName)) {
+                return { valid: false, message: 'Имя не должно содержать цифры' };
+            }
+
+            // Проверка на наличие смайликов и спецсимволов (разрешены только буквы, пробел, дефис)
+            const allowedRegex = /^[a-zA-Zа-яА-ЯёЁ\s-]+$/;
+            if (!allowedRegex.test(trimmedName)) {
+                return { valid: false, message: 'Имя должно содержать только буквы, пробелы и дефисы' };
+            }
+
+            // Проверка на мат
+            const lowerName = trimmedName.toLowerCase();
+            for (let badWord of badWords) {
+                if (lowerName.includes(badWord)) {
+                    return { valid: false, message: 'Имя содержит недопустимые слова' };
+                }
+            }
+
+            return { valid: true, message: '' };
+        }
+
+        // ============ Управление пользователем ============
+
+        function saveUser(user) {
+            localStorage.setItem('coffee_user', JSON.stringify(user));
+            currentUser = user;
+            console.log('✅ Пользователь сохранен:', user.display_name || user.first_name || user.username);
+            renderApp();
+            renderCart();
+        }
+
+        function loadUser() {
+            const saved = localStorage.getItem('coffee_user');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    console.log('📀 Пользователь загружен:', currentUser.display_name || currentUser.first_name || currentUser.username);
+                    return currentUser;
+                } catch(e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        function logout() {
+            localStorage.removeItem('coffee_user');
+            currentUser = null;
+            renderApp();
+            renderCart();
+            showToast('👋 Вы вышли из аккаунта');
+        }
+
+        // Проверка наличия имени
+        function hasDisplayName() {
+            return currentUser && currentUser.display_name && currentUser.display_name.trim() !== '';
+        }
+
+        // Сохранение имени пользователя на сервер с проверкой
+        async function saveDisplayName(name) {
+            if (!currentUser) return false;
+
+            const validation = validateName(name);
+
+            if (!validation.valid) {
+                showToast(`❌ ${validation.message}`);
+                const nameInput = document.getElementById('nameInput');
+                if (nameInput) {
+                    nameInput.classList.add('error');
+                    nameInput.focus();
+                }
+                const warningDiv = document.getElementById('nameWarning');
+                if (warningDiv) {
+                    warningDiv.textContent = validation.message;
+                    warningDiv.classList.add('show');
+                }
+                return false;
+            }
+
+            // Убираем ошибки если были
+            const nameInput = document.getElementById('nameInput');
+            if (nameInput) nameInput.classList.remove('error');
+            const warningDiv = document.getElementById('nameWarning');
+            if (warningDiv) warningDiv.classList.remove('show');
+
+            try {
+                const response = await fetch('/update_name', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: currentUser.id,
+                        display_name: name.trim()
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentUser.display_name = name.trim();
+                    saveUser(currentUser);
+                    showToast(`✅ Имя сохранено: ${name.trim()}`);
+                    renderApp();
+                    renderCart();
+                    return true;
+                } else {
+                    showToast('❌ Ошибка сохранения имени');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Save name error:', error);
+                showToast('❌ Ошибка соединения');
+                return false;
+            }
+        }
+
+        // ============ Управление корзиной ============
+
+        function getCart() {
+            const cart = localStorage.getItem('coffee_cart');
+            return cart ? JSON.parse(cart) : [];
+        }
+
+        function saveCart(cart) {
+            localStorage.setItem('coffee_cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function addToCart(drink, price) {
+            const cart = getCart();
+            const existingItem = cart.find(item => item.drink === drink);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    drink: drink,
+                    price: price,
+                    quantity: 1
+                });
+            }
+
+            saveCart(cart);
+            showToast(`✅ ${drink} добавлен в корзину`);
+        }
+
+        function updateQuantity(drink, delta) {
+            const cart = getCart();
+            const index = cart.findIndex(item => item.drink === drink);
+
+            if (index !== -1) {
+                cart[index].quantity += delta;
+                if (cart[index].quantity <= 0) {
+                    cart.splice(index, 1);
+                }
+                saveCart(cart);
+            }
+        }
+
+        function removeFromCart(drink) {
+            const cart = getCart();
+            const newCart = cart.filter(item => item.drink !== drink);
+            saveCart(newCart);
+            showToast(`❌ ${drink} удален из корзины`);
+        }
+
+        function getCartTotal() {
+            const cart = getCart();
+            return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+        }
+
+        // ============ Оформление заказа ============
+
+        async function checkout() {
+            const cart = getCart();
+
+            if (!currentUser) {
+                showToast('🔐 Авторизация...');
+                return;
+            }
+
+            // Проверяем, ввел ли пользователь имя
+            if (!hasDisplayName()) {
+                showToast('⚠️ Сначала введите ваше имя в профиле!');
+                const nameInput = document.getElementById('nameInput');
+                if (nameInput) {
+                    nameInput.focus();
+                    nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
+            if (cart.length === 0) {
+                showToast('🛒 Корзина пуста');
+                return;
+            }
+
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            showToast(`⏳ Оформление заказа (${totalItems} позиций)...`);
+
+            try {
+                const response = await fetch('/bulk_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: currentUser.id,
+                        display_name: currentUser.display_name,
+                        items: cart.map(item => ({
+                            drink: item.drink,
+                            price: item.price,
+                            quantity: item.quantity
+                        }))
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast(`✅ Заказ оформлен! Чек придет в Telegram.`);
+                    localStorage.removeItem('coffee_cart');
+                    renderCart();
+                } else {
+                    showToast(`❌ Ошибка: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Order error:', error);
+                showToast('❌ Ошибка соединения');
+            }
+        }
+
+        // ============ Telegram WebApp АВТОМАТИЧЕСКАЯ АВТОРИЗАЦИЯ ============
+
+        async function autoAuth() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const webApp = window.Telegram.WebApp;
+                const user = webApp.initDataUnsafe?.user;
+
+                if (user) {
+                    console.log('🔐 Автоматическая авторизация через WebApp:', user);
+
+                    const authData = {
+                        id: user.id,
+                        username: user.username || '',
+                        first_name: user.first_name || '',
+                        last_name: user.last_name || '',
+                        auth_date: Math.floor(Date.now() / 1000)
+                    };
+
+                    await sendAuthToServer(authData);
+                } else {
+                    console.log('⚠️ Не удалось получить данные пользователя из WebApp');
+                    isLoading = false;
+                    renderApp();
+                }
+            } else {
+                console.log('⚠️ Приложение открыто не в Telegram WebView');
+                isLoading = false;
+                renderApp();
+            }
+        }
+
+        async function sendAuthToServer(authData) {
+            try {
+                const response = await fetch('/auth/telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(authData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    saveUser(data.user);
+                    showToast(`✅ Добро пожаловать, ${data.user.first_name || data.user.username}!`);
+                } else {
+                    showToast('❌ Ошибка авторизации');
+                }
+                isLoading = false;
+                renderApp();
+            } catch (error) {
+                console.error('Auth error:', error);
+                showToast('❌ Ошибка соединения');
+                isLoading = false;
+                renderApp();
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ============ Рендер ============
+
+        function renderApp() {
+            const app = document.getElementById('app');
+
+            if (isLoading) {
+                app.innerHTML = '<div class="loading">⏳ Загрузка...</div>';
+                return;
+            }
+
+            if (!currentUser) {
+                app.innerHTML = `
+                    <h1>☕ CoffeeBot</h1>
+                    <div class="unauth-badge">
+                        ⚠️ Для заказов нужно авторизоваться через Telegram<br>
+                        <small>Нажмите кнопку "Открыть кофейню" в боте</small>
+                    </div>
+                    <div class="menu">
+                        ${menu.map(item => `
+                            <div class="coffee-item">
+                                <div class="coffee-info">
+                                    <h3>${item.name}</h3>
+                                    <p>${item.description}</p>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="price">${item.price} ₽</span>
+                                    <button class="add-to-cart-btn" disabled style="opacity:0.5;">
+                                        🛒 В корзину
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="unauth-badge" style="margin-top: 15px;">
+                        🔐 Авторизуйтесь в Telegram боте
+                    </div>
+                `;
+                return;
+            }
+
+            const displayName = currentUser.display_name || '';
+            const hasName = displayName && displayName.trim() !== '';
+            const avatarLetter = hasName ? displayName[0].toUpperCase() : (currentUser.first_name ? currentUser.first_name[0].toUpperCase() : '👤');
+
+            app.innerHTML = `
+                <h1>☕ CoffeeBot</h1>
+                <div class="profile">
+                    <div class="profile-header">
+                        <div class="profile-info">
+                            <div class="avatar">${avatarLetter}</div>
+                            <div class="user-details">
+                                <div class="user-name" id="displayNameText">${hasName ? displayName : (currentUser.first_name || currentUser.username || 'Пользователь')}</div>
+                                <div class="user-username">@${currentUser.username || 'нет username'} | ID: ${currentUser.id}</div>
+                            </div>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
+                    </div>
+                    <div class="name-edit">
+                        <input type="text" class="name-input" id="nameInput" placeholder="Введите ваше имя (только буквы, без цифр и смайликов)" value="${displayName}">
+                        <button class="save-name-btn" onclick="saveDisplayName(document.getElementById('nameInput').value)">💾 Сохранить</button>
+                    </div>
+                    <div id="nameWarning" class="name-warning ${!hasName ? 'show' : ''}">
+                        ⚠️ Имя обязательно для оформления заказа. Только буквы, без цифр и смайликов.
+                    </div>
+                </div>
+                <div class="menu">
+                    ${menu.map(item => `
+                        <div class="coffee-item">
+                            <div class="coffee-info">
+                                <h3>${item.name}</h3>
+                                <p>${item.description}</p>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <span class="price">${item.price} ₽</span>
+                                <button class="add-to-cart-btn" onclick="addToCart('${item.name}', ${item.price})">
+                                    🛒 В корзину
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            // Добавляем обработчик ввода для реальной проверки
+            const nameInput = document.getElementById('nameInput');
+            if (nameInput) {
+                nameInput.addEventListener('input', function(e) {
+                    const validation = validateName(e.target.value);
+                    if (!validation.valid && e.target.value !== '') {
+                        e.target.classList.add('error');
+                        const warningDiv = document.getElementById('nameWarning');
+                        if (warningDiv) {
+                            warningDiv.textContent = validation.message;
+                            warningDiv.classList.add('show');
+                        }
+                    } else {
+                        e.target.classList.remove('error');
+                        const warningDiv = document.getElementById('nameWarning');
+                        if (warningDiv) {
+                            warningDiv.classList.remove('show');
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderCart() {
+            const cartContent = document.getElementById('cart-content');
+            const cart = getCart();
+            const nameEntered = hasDisplayName();
+
+            if (!currentUser) {
+                cartContent.innerHTML = '<div class="empty-cart">🔐 Авторизуйтесь, чтобы добавить товары</div>';
+                return;
+            }
+
+            if (cart.length === 0) {
+                cartContent.innerHTML = '<div class="empty-cart">🛒 Корзина пуста<br><small>Добавьте кофе в корзину</small></div>';
+                return;
+            }
+
+            cartContent.innerHTML = `
+                <div class="cart-items">
+                    ${cart.map(item => `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <div class="cart-item-name">${item.drink}</div>
+                                <div class="cart-item-price">${item.price} ₽</div>
+                            </div>
+                            <div class="cart-item-quantity">
+                                <button class="quantity-btn" onclick="updateQuantity('${item.drink}', -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button class="quantity-btn" onclick="updateQuantity('${item.drink}', 1)">+</button>
+                            </div>
+                            <button class="remove-item" onclick="removeFromCart('${item.drink}')">✕</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="cart-total">
+                    <div>Итого: <span class="total-price">${getCartTotal()} ₽</span></div>
+                    <button class="checkout-btn" onclick="checkout()" ${!nameEntered ? 'disabled style="opacity:0.5;"' : ''}>
+                        🚀 Оформить заказ
+                    </button>
+                    ${!nameEntered ? '<small style="display: block; text-align: center; margin-top: 8px; color: #ff4757;">⚠️ Сначала введите ваше имя в профиле</small>' : ''}
+                </div>
+            `;
+        }
+
+        // ============ Инициализация ============
+
+        loadUser();
+        autoAuth();
+        renderApp();
+        renderCart();
+
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    </script>
+</body>
+</html>
